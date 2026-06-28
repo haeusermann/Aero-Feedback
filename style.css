@@ -311,3 +311,85 @@ input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent);
 @media (prefers-reduced-motion: reduce) {
   #panel { transition: none; }
 }
+
+/* ---------------------------------------------------------------------------
+ * Hilfe-Button (inline, neben Label-Text)
+ * ------------------------------------------------------------------------- */
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1;
+  padding: 0;
+}
+.help-btn:active { opacity: 0.7; }
+
+/* ---------------------------------------------------------------------------
+ * Modal: Ballgrössen-Tabelle
+ * ------------------------------------------------------------------------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 10, 20, 0.80);
+  backdrop-filter: blur(4px);
+}
+.modal[hidden] { display: none; }
+
+.modal-card {
+  width: min(380px, 100%);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 24px 20px 20px;
+}
+.modal-card h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+.ref-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  padding: 4px 8px 8px;
+}
+.ref-table td {
+  padding: 8px;
+  border-top: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.ref-table tr.highlight td {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.modal-note {
+  margin: 0 0 18px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
