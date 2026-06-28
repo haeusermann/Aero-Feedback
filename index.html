@@ -20,12 +20,12 @@
   <div id="start-overlay">
     <div class="start-card">
       <h1>Frontfläche</h1>
-      <p class="lead">Live-Stirnfläche für die Tuck-Position im Skirennsport.</p>
+      <p class="lead">Live-Stirnfläche für die Hocke im Skirennsport.</p>
       <ol class="steps">
         <li>Fahrer mittig ins Bild, heller Hintergrund (Schnee).</li>
         <li>Ball (bekannter Durchmesser) auf Fusshöhe daneben legen.</li>
         <li>Ball einmal antippen – das setzt den Massstab.</li>
-        <li>Tuck variieren und die Fläche beobachten.</li>
+        <li>Hocke variieren und die Fläche beobachten.</li>
       </ol>
       <button id="btn-start" class="primary">Kamera starten</button>
       <p class="hint">Frontkamera, damit der Fahrer die Anzeige selbst sieht.</p>
@@ -56,9 +56,15 @@
 
     <!-- Primary actions -->
     <div id="actions">
-      <button id="btn-reference" class="action">Referenz setzen</button>
-      <button id="btn-reset" class="action ghost">Zurücksetzen</button>
-      <button id="btn-settings" class="action ghost" aria-label="Einstellungen">⚙︎</button>
+      <!-- Small secondary buttons, left edge -->
+      <div class="actions-secondary">
+        <button id="btn-reference" class="action-small">Referenz</button>
+        <button id="btn-reset" class="action-small ghost">Reset</button>
+      </div>
+      <!-- Main action: pick / re-pick the ball -->
+      <button id="btn-ball" class="action-main">⬤ Ball wählen</button>
+      <!-- Settings icon, right edge -->
+      <button id="btn-settings" class="action-icon" aria-label="Einstellungen">⚙︎</button>
     </div>
   </main>
 
@@ -106,8 +112,8 @@
 
     <p class="disclaimer">
       Misst die projizierte Stirnfläche A, nicht den Luftwiderstand c<sub>w</sub>·A.
-      Gedacht für den Vergleich eigener Positionen, nicht zwischen Athleten.
-      Ski-/Fusslage zwischen den Posen konstant halten.
+      Gedacht für den Vergleich eigener Hocken, nicht zwischen Athleten.
+      Ski-/Fusslage zwischen den Hocken konstant halten.
     </p>
   </section>
 
