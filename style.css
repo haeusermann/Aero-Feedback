@@ -150,7 +150,7 @@ button.primary:active { transform: translateY(1px); }
   position: absolute;
   left: 12px;
   right: 12px;
-  bottom: calc(84px + var(--safe-bottom));
+  bottom: calc(100px + var(--safe-bottom));
   text-align: center;
   font-size: 13px;
   color: var(--ink);
@@ -170,29 +170,66 @@ button.primary:active { transform: translateY(1px); }
   right: 0;
   bottom: 0;
   display: flex;
-  gap: 10px;
-  padding: 12px 12px calc(12px + var(--safe-bottom));
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 10px calc(12px + var(--safe-bottom));
   background: linear-gradient(to top, rgba(8, 12, 22, 0.92), rgba(8, 12, 22, 0));
 }
-.action {
-  flex: 1;
-  padding: 14px 10px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #042032;
-  background: var(--accent);
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
+
+/* Left cluster: two small stacked secondary buttons */
+.actions-secondary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
 }
-.action.ghost {
+.action-small {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--ink);
   background: rgba(30, 42, 66, 0.85);
   border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
 }
-.action.ghost:active { background: rgba(40, 55, 85, 0.9); }
-#btn-settings { flex: 0 0 56px; font-size: 20px; }
-.action.small { flex: 0 0 auto; padding: 8px 14px; }
+.action-small.ghost {
+  color: var(--ink-dim);
+  background: rgba(20, 30, 50, 0.70);
+}
+.action-small:active { opacity: 0.75; }
+
+/* Centre: prominent ball-pick button */
+.action-main {
+  flex: 1;
+  padding: 15px 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #042032;
+  background: var(--accent);
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+}
+.action-main:active { transform: translateY(1px); }
+
+/* Right: icon-only settings button */
+.action-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  font-size: 20px;
+  color: var(--ink);
+  background: rgba(30, 42, 66, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.action-icon:active { opacity: 0.75; }
 
 /* ---------------------------------------------------------------------------
  * Settings panel (slides up from the bottom)
