@@ -203,8 +203,8 @@ button.primary:active { transform: translateY(1px); }
 /* Centre: prominent ball-pick button */
 .action-main {
   flex: 1;
-  padding: 15px 10px;
-  font-size: 16px;
+  padding: 10px 10px;
+  font-size: 14px;
   font-weight: 700;
   color: #042032;
   background: var(--accent);
