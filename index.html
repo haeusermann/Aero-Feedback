@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+  <meta charset="UTF-8" />
+  <!-- viewport-fit=cover so the layout uses the full screen incl. notch areas -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0b1220" />
+  <title>Frontfläche</title>
+
+  <!-- PWA wiring -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Start gate: the camera needs a user gesture to begin. -->
+  <div id="start-overlay">
+    <div class="start-card">
+      <h1>Frontfläche</h1>
+      <p class="lead">Live-Stirnfläche für die Tuck-Position im Skirennsport.</p>
+      <ol class="steps">
+        <li>Fahrer mittig ins Bild, heller Hintergrund (Schnee).</li>
+        <li>Ball (bekannter Durchmesser) auf Fusshöhe daneben legen.</li>
+        <li>Ball einmal antippen – das setzt den Massstab.</li>
+        <li>Tuck variieren und die Fläche beobachten.</li>
+      </ol>
+      <button id="btn-start" class="primary">Kamera starten</button>
+      <p class="hint">Frontkamera, damit der Fahrer die Anzeige selbst sieht.</p>
+    </div>
+  </div>
+
+  <!-- Live view -->
+  <main id="stage">
+    <!-- Hidden elements used only for processing -->
+    <video id="video" playsinline muted></video>
+    <canvas id="proc" hidden></canvas>
+
+    <!-- Visible canvas: mirrored video + overlays. Tap it to pick the ball. -->
+    <canvas id="view"></canvas>
+
+    <!-- Big, glanceable readout overlaid on the video -->
+    <div id="hud">
+      <div class="readout">
+        <span id="area-value">–</span>
+        <span id="area-unit">m²</span>
+      </div>
+      <div id="deviation" class="sub">Ball antippen zum Kalibrieren</div>
+      <div class="best-row">Bestwert: <span id="best-value">–</span></div>
+    </div>
+
+    <!-- Status line -->
+    <div id="status" class="status">Kamera starten, um zu beginnen.</div>
+
+    <!-- Primary actions -->
+    <div id="actions">
+      <button id="btn-reference" class="action">Referenz setzen</button>
+      <button id="btn-reset" class="action ghost">Zurücksetzen</button>
+      <button id="btn-settings" class="action ghost" aria-label="Einstellungen">⚙︎</button>
+    </div>
+  </main>
+
+  <!-- Slide-up settings panel -->
+  <section id="panel" aria-label="Einstellungen">
+    <div class="panel-grip"></div>
+
+    <label class="row">
+      <span>Dunkelschwelle <small>(tiefer = nur sehr dunkle Flächen)</small></span>
+      <input type="range" id="threshold" min="20" max="180" value="90" />
+      <output id="threshold-val">90</output>
+    </label>
+
+    <label class="row">
+      <span>Bodenlinie <small>(blendet Ski / Vordergrund unten aus)</small></span>
+      <input type="range" id="floor" min="40" max="100" value="100" />
+      <output id="floor-val">100 %</output>
+    </label>
+
+    <label class="row">
+      <span>Ball-Durchmesser</span>
+      <input type="number" id="ball-diameter" min="0.05" max="1" step="0.005" value="0.22" />
+      <output>m</output>
+    </label>
+
+    <label class="row">
+      <span>Auflösung <small>(tiefer = flüssiger)</small></span>
+      <select id="resolution">
+        <option value="240">240 px</option>
+        <option value="320" selected>320 px</option>
+        <option value="480">480 px</option>
+      </select>
+      <output></output>
+    </label>
+
+    <label class="row inline">
+      <span>Ton-Feedback <small>(höher = besser)</small></span>
+      <input type="checkbox" id="audio-toggle" />
+    </label>
+
+    <label class="row inline">
+      <span>Kamera wechseln</span>
+      <button id="btn-flip" class="action ghost small">Front / Rück</button>
+    </label>
+
+    <p class="disclaimer">
+      Misst die projizierte Stirnfläche A, nicht den Luftwiderstand c<sub>w</sub>·A.
+      Gedacht für den Vergleich eigener Positionen, nicht zwischen Athleten.
+      Ski-/Fusslage zwischen den Posen konstant halten.
+    </p>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>
