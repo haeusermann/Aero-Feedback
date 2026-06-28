@@ -246,6 +246,16 @@ async function startCamera() {
   resizeBuffers();
   sizeViewCanvas();
 
+
+  // Prevent the screen from sleeping while the camera is active.
+  if ('wakeLock' in navigator) {
+    try {
+      state.wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) {
+      console.warn('Wake Lock nicht verfügbar:', e);
+    }
+  }
+
   state.running = true;
   setStatus('Bereit. Ball antippen, um die Farbe zu wählen.');
   requestAnimationFrame(loop);
@@ -677,15 +687,6 @@ function bindUI() {
 
   // Keep canvases sized correctly on rotation / resize.
   window.addEventListener('resize', () => { if (state.running) sizeViewCanvas(); });
-
-  // Fullsize toggle
-  document.getElementById('btn-fullscreen').addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  });
 }
 
 // =============================================================================
@@ -712,5 +713,17 @@ function init() {
     navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW:', e));
   }
 }
+
+// Wake Lock automatisch wiederherstellen, wenn die App aus dem Hintergrund
+// zurückkommt (der Browser gibt den Lock beim Wechsel in den Hintergrund frei).
+document.addEventListener('visibilitychange', async () => {
+  if (state.wakeLock && document.visibilityState === 'visible') {
+    try {
+      state.wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) {
+      console.warn('Wake Lock Wiederherstellung fehlgeschlagen:', e);
+    }
+  }
+});
 
 document.addEventListener('DOMContentLoaded', init);
