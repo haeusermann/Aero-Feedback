@@ -585,7 +585,7 @@ function onCanvasTap(e) {
   // Reset session statistics: a fresh calibration starts a fresh comparison.
   state.areaSmoothed = null;
   state.bestArea = null;
-  setStatus(`Ball-Farbe gesetzt (H ${Math.round(state.ballColor.h)}°). Tuck einnehmen.`);
+  setStatus(`Ball-Farbe gesetzt (H ${Math.round(state.ballColor.h)}°). Hocke einnehmen.`);
 }
 
 // =============================================================================
@@ -607,7 +607,7 @@ function bindUI() {
       state.refArea = state.areaSmoothed;
       setStatus(`Referenz gespeichert: ${state.refArea.toFixed(3)} m².`);
     } else {
-      setStatus('Noch keine Messung – zuerst Ball antippen und Tuck einnehmen.');
+      setStatus('Noch keine Messung – zuerst Ball antippen und Hocke einnehmen.');
     }
   });
 
@@ -616,6 +616,15 @@ function bindUI() {
     state.bestArea = null;
     state.refArea = null;
     setStatus('Bestwert und Referenz zurückgesetzt.');
+  });
+
+  // Re-pick the ball colour: clear the current colour so the next canvas tap
+  // picks a fresh target, and reset all derived measurements.
+  document.getElementById('btn-ball').addEventListener('click', () => {
+    state.ballColor = null;
+    state.areaSmoothed = null;
+    state.bestArea = null;
+    setStatus('Ball antippen, um die Farbe neu zu wählen.');
   });
 
   // Switch front / rear camera.
