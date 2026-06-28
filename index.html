@@ -9,13 +9,18 @@
 
   <!-- PWA wiring -->
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Splash screen: shown for 2 s on app launch, then fades out. -->
+  <div id="splash">
+    <img src="icons/splash.png" alt="Aero-Feedback" />
+  </div>
+
   <!-- Start gate: the camera needs a user gesture to begin. -->
   <div id="start-overlay">
     <div class="start-card">
@@ -64,6 +69,7 @@
       <!-- Main action: pick / re-pick the ball -->
       <button id="btn-ball" class="action-main">⬤ Ball wählen</button>
       <!-- Settings icon, right edge -->
+      <button id="btn-fullscreen" class="action-icon" aria-label="Vollbild">⛶</button>
       <button id="btn-settings" class="action-icon" aria-label="Einstellungen">⚙︎</button>
     </div>
   </main>
