@@ -675,6 +675,20 @@ function bindUI() {
     sizeViewCanvas();
   });
 
+  // Ball-Durchmesser Hilfe-Modal öffnen / schliessen.
+  const ballHelpModal = document.getElementById('ball-help-modal');
+  document.getElementById('btn-ball-help').addEventListener('click', (e) => {
+    e.preventDefault();          // verhindert, dass das Label das Input fokussiert
+    ballHelpModal.hidden = false;
+  });
+  document.getElementById('btn-ball-help-close').addEventListener('click', () => {
+    ballHelpModal.hidden = true;
+  });
+  // Tap auf den Hintergrund (ausserhalb der Modal-Card) schliesst ebenfalls.
+  ballHelpModal.addEventListener('click', (e) => {
+    if (e.target === ballHelpModal) ballHelpModal.hidden = true;
+  });
+
   // Audio toggle.
   const audio = document.getElementById('audio-toggle');
   audio.addEventListener('change', () => setAudio(audio.checked));
