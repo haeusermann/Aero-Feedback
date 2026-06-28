@@ -799,7 +799,7 @@ function init() {
       splash.classList.add('hidden');
       // Remove from DOM after the CSS fade transition (0.4 s) completes.
       splash.addEventListener('transitionend', () => splash.remove(), { once: true });
-    }, 2000);
+    }, 4000);
   }
 
   state.video      = document.getElementById('video');
