@@ -30,6 +30,31 @@ html, body {
 }
 
 /* ---------------------------------------------------------------------------
+ * Splash screen: fullscreen image shown for 2 s on launch
+ * ------------------------------------------------------------------------- */
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;                  /* above everything, incl. start overlay */
+  background: #fff;              /* weisser Hintergrund passend zum Bild */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.4s ease;
+}
+#splash img {
+  max-width: min(380px, 90vw);
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 28px;           /* spiegelt die abgerundeten Ecken des Bildes */
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+}
+#splash.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
  * Start gate
  * ------------------------------------------------------------------------- */
 #start-overlay {
