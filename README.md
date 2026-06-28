@@ -1,7 +1,7 @@
 # Frontfläche
 
 Eine installierbare PWA, die live die projizierte **Stirnfläche** eines Skifahrers
-in m² schätzt – als Trainingshilfe, um die eigene Tuck-Position aerodynamisch zu
+in m² schätzt – als Trainingshilfe, um die eigene Hocke-Position aerodynamisch zu
 optimieren. Komplett offline-fähig, ohne Laufzeit-Abhängigkeiten (keine CDNs,
 kein App-Store).
 
