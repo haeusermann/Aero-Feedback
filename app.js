@@ -685,6 +685,69 @@ function bindUI() {
     panel.classList.toggle('open');
   });
 
+  // Drag-to-close (und Tap-to-close) auf dem Grip-Balken oben am Panel.
+  // - Eine reine Berührung ohne Bewegung schliesst das Panel sofort.
+  // - Ein Ziehen nach unten verschiebt das Panel live mit dem Finger; wird
+  //   mehr als ~25 % der Panel-Höhe gezogen, klappt es zu, sonst federt es
+  //   in die offene Position zurück.
+  const grip = panel.querySelector('.panel-grip');
+  if (grip) {
+    let startY = null;     // y-Koordinate des Berührungsbeginns
+    let lastY = null;      // letzte y-Koordinate (für Distanz-Berechnung)
+    let dragged = false;   // wurde signifikant gezogen?
+
+    const onStart = (e) => {
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      startY = y;
+      lastY = y;
+      dragged = false;
+      // Während des Drags die CSS-Transition pausieren, damit das Panel dem
+      // Finger ohne Verzögerung folgt.
+      panel.style.transition = 'none';
+    };
+
+    const onMove = (e) => {
+      if (startY === null) return;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+      lastY = y;
+      const delta = y - startY;
+      if (Math.abs(delta) > 5) dragged = true;
+      // Nur nach unten ziehen (nicht nach oben über die Offen-Position hinaus).
+      if (delta > 0) {
+        panel.style.transform = `translateY(${delta}px)`;
+        if (e.cancelable) e.preventDefault();   // verhindert Hintergrund-Scroll
+      }
+    };
+
+    const onEnd = () => {
+      if (startY === null) return;
+      const delta = (lastY ?? startY) - startY;
+      const panelHeight = panel.getBoundingClientRect().height;
+      // CSS-Transition wieder aktivieren und Inline-Transform zurücknehmen,
+      // damit das Panel sauber in End- oder Ausgangsposition animiert.
+      panel.style.transition = '';
+      panel.style.transform = '';
+      // Tap (kein Drag) oder Drag über 25 % der Panel-Höhe => schliessen.
+      if (!dragged || delta > panelHeight * 0.25) {
+        panel.classList.remove('open');
+      }
+      startY = null;
+      lastY = null;
+      dragged = false;
+    };
+
+    // Touch (Mobile) – primärer Anwendungsfall.
+    grip.addEventListener('touchstart', onStart, { passive: false });
+    grip.addEventListener('touchmove',  onMove,  { passive: false });
+    grip.addEventListener('touchend',   onEnd);
+    grip.addEventListener('touchcancel', onEnd);
+    // Maus (Desktop-Tests) – mousemove/up bewusst am document, damit ein Drag
+    // ausserhalb des Grips zu Ende geführt werden kann.
+    grip.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onEnd);
+  }
+
   // Fullscreen toggle. Document-level so the entire viewport is captured.
   // iOS Safari ignores requestFullscreen on regular pages, but accepts it when
   // the PWA is launched from the home screen (standalone mode).
