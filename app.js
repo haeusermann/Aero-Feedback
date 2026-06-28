@@ -791,6 +791,17 @@ function bindUI() {
 // =============================================================================
 
 function init() {
+  // Show the splash image for 2 s, then fade it out and remove it from the
+  // layout so it can't accidentally block taps on the start overlay.
+  const splash = document.getElementById('splash');
+  if (splash) {
+    setTimeout(() => {
+      splash.classList.add('hidden');
+      // Remove from DOM after the CSS fade transition (0.4 s) completes.
+      splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+    }, 2000);
+  }
+
   state.video      = document.getElementById('video');
   state.procCanvas = document.getElementById('proc');
   state.procCtx    = state.procCanvas.getContext('2d', { willReadFrequently: true });
