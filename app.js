@@ -677,6 +677,15 @@ function bindUI() {
 
   // Keep canvases sized correctly on rotation / resize.
   window.addEventListener('resize', () => { if (state.running) sizeViewCanvas(); });
+
+  // Fullsize toggle
+  document.getElementById('btn-fullscreen').addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  });
 }
 
 // =============================================================================
