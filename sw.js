@@ -9,7 +9,7 @@
  * new build.
  * ===========================================================================*/
 
-const CACHE_VERSION = 'frontflaeche-v1';
+const CACHE_VERSION = 'frontflaeche-v2';
 
 const ASSETS = [
   './',
@@ -20,6 +20,9 @@ const ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
+  './icons/apple-touch-icon.png',
+  './icons/aero-feedback.png',
+  './icons/splash.png',
 ];
 
 // Pre-cache the app shell on install.
