@@ -685,6 +685,26 @@ function bindUI() {
     panel.classList.toggle('open');
   });
 
+  // Fullscreen toggle. Document-level so the entire viewport is captured.
+  // iOS Safari ignores requestFullscreen on regular pages, but accepts it when
+  // the PWA is launched from the home screen (standalone mode).
+  const fsBtn = document.getElementById('btn-fullscreen');
+  if (fsBtn) {
+    fsBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((e) =>
+          console.warn('Fullscreen abgelehnt:', e)
+        );
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+    // Keep the icon in sync with the actual state.
+    document.addEventListener('fullscreenchange', () => {
+      fsBtn.textContent = document.fullscreenElement ? '✕' : '⛶';
+    });
+  }
+
   // Keep canvases sized correctly on rotation / resize.
   window.addEventListener('resize', () => { if (state.running) sizeViewCanvas(); });
 }
@@ -714,10 +734,29 @@ function init() {
   }
 }
 
-// Wake Lock automatisch wiederherstellen, wenn die App aus dem Hintergrund
-// zurückkommt (der Browser gibt den Lock beim Wechsel in den Hintergrund frei).
+// Wake Lock und Kamera automatisch wiederherstellen, wenn die App aus dem
+// Hintergrund zurückkommt. Beim Wechsel in den Hintergrund gibt der Browser
+// den Wake Lock frei, und je nach Plattform stoppt auch der Kamera-Stream.
+// Sobald die App wieder sichtbar ist, holen wir beides zurück – ohne dass der
+// Nutzer erneut auf "Kamera starten" tippen muss.
 document.addEventListener('visibilitychange', async () => {
-  if (state.wakeLock && document.visibilityState === 'visible') {
+  if (document.visibilityState !== 'visible') return;
+
+  // Kamera-Stream neu aufbauen, falls er beim Tab-Wechsel oder Display-Aus
+  // beendet wurde. state.running wird beim ersten erfolgreichen Start gesetzt
+  // und bleibt true – das nutzen wir als Marker "Kamera war schon einmal aktiv".
+  if (state.running) {
+    const track = state.stream && state.stream.getVideoTracks()[0];
+    const trackDead = !track || track.readyState === 'ended';
+    const videoStalled = state.video && state.video.paused;
+    if (trackDead || videoStalled) {
+      await startCamera();           // baut Stream + Wake Lock komplett neu auf
+      return;                        // Wake Lock unten nicht doppelt anfordern
+    }
+  }
+
+  // Wake Lock allein wiederherstellen (Stream lebt noch).
+  if (state.wakeLock !== null && 'wakeLock' in navigator) {
     try {
       state.wakeLock = await navigator.wakeLock.request('screen');
     } catch (e) {
