@@ -1,7 +1,7 @@
 {
-  "name": "Frontfläche – Stirnfläche live",
-  "short_name": "Frontfläche",
-  "description": "Live-Schätzung der projizierten Stirnfläche für die Tuck-Position im Skirennsport.",
+  "name": "Aero-Feedback – Stirnfläche live",
+  "short_name": "Aero-Feedback",
+  "description": "Live-Schätzung der projizierten Stirnfläche für die Hocke im Skirennsport.",
   "lang": "de-CH",
   "start_url": ".",
   "scope": ".",
