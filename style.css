@@ -203,8 +203,8 @@ button.primary:active { transform: translateY(1px); }
 /* Centre: prominent ball-pick button */
 .action-main {
   flex: 1;
-  padding: 10px 10px;
-  font-size: 14px;
+  padding: 15px 10px;
+  font-size: 16px;
   font-weight: 700;
   color: #042032;
   background: var(--accent);
@@ -256,6 +256,17 @@ button.primary:active { transform: translateY(1px); }
   border-radius: 3px;
   background: var(--line);
   margin: 6px auto 14px;
+  /* Grip is interactive: tap or drag down to close the panel. */
+  position: relative;
+  cursor: grab;
+  touch-action: none;            /* let JS handle the gesture, no native scroll */
+}
+.panel-grip:active { cursor: grabbing; }
+/* Invisible hit area around the visual grip so it's easy to grab on touch. */
+.panel-grip::before {
+  content: '';
+  position: absolute;
+  inset: -16px -40px;
 }
 .row {
   display: grid;
