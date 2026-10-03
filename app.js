@@ -1,19 +1,36 @@
+
+
 /* =============================================================================
  * Frontfläche - live frontal-area estimator for alpine ski racing
  * -----------------------------------------------------------------------------
- * Goal: while a skier holds a tuck in front of the (front/selfie) camera, show
+ * Goal: while a skier holds a tuck in front of the (rear) camera, show
  * the projected frontal area in m^2, live and glanceable from a few metres away.
+ *
+ * Setup:
+ *   - One person holds the phone and films the skier with the REAR camera.
+ *   - A reference ball (known diameter) is placed on the ground in the fixed
+ *     "ball zone" at the bottom-LEFT of the frame (from the camera's view).
+ *   - The skier stands to the RIGHT of the ball.
+ *   - Audio feedback lets the skier hear whether their pose is better/worse.
  *
  * Measurement principle
  * ---------------------
- *   1. The skier is a dark silhouette against bright snow -> detect by a
- *      luminance threshold, then keep only the LARGEST connected dark blob
+ *   1. The skier is a dark silhouette against a bright background -> detect by
+ *      a luminance threshold, then keep only the LARGEST connected dark blob
  *      (this rejects shadows, spectators, distant dark objects, speckle).
- *   2. A neon ball of KNOWN diameter lies on the snow at foot level. It is the
- *      metric reference: its apparent pixel diameter gives the scale
+ *   2. The ball of KNOWN diameter lies in the fixed bottom-LEFT zone. It is
+ *      the metric reference: its apparent pixel diameter gives the scale
  *      s = D_real / d_px  [metres per pixel].
  *   3. Frontal area  A = N_person * s^2   [m^2]
  *      where N_person is the dark-blob pixel count.
+ *
+ * Zone separation (new):
+ *   - BALL zone: bottom-left third of the frame (height = 1/3, width = 1/3).
+ *     Only ball-coloured pixels inside this zone contribute to the ball blob.
+ *   - PERSON zone: everything OUTSIDE the ball zone. Only dark pixels there
+ *     contribute to the person blob.
+ *   This guarantees ball and person can never be confused, even if both are
+ *   dark on a bright background.
  *
  * Why this is resolution-independent (a nice property to rely on):
  *   If we change the processing resolution by a factor k, then
@@ -38,12 +55,13 @@ const state = {
   video: null,             // hidden <video> carrying the camera stream
   procCanvas: null,        // hidden low-res canvas used for pixel processing
   procCtx: null,
-  viewCanvas: null,        // visible canvas: mirrored video + overlays
+  viewCanvas: null,        // visible canvas: video + overlays
   viewCtx: null,
 
   // --- Camera ---------------------------------------------------------------
   stream: null,
-  facing: 'user',          // 'user' = front/selfie camera, 'environment' = rear
+  facing: 'environment',   // DEFAULT: 'environment' = rear camera (realistic use)
+                           //          'user'        = front/selfie camera
   running: false,
 
   // --- Processing resolution ------------------------------------------------
@@ -57,6 +75,11 @@ const state = {
   ballDiameterM: 0.22,     // real ball diameter in metres (size-5 football ~0.22)
   floorPct: 100,           // ignore skier pixels BELOW this % of frame height
                            // (lets the user crop out skis / foreground snow)
+
+  // --- Ball zone (fixed: bottom-LEFT third of the frame) --------------------
+  // Expressed as fractions of the frame; a 1/3 x 1/3 rectangle in the lower-
+  // left corner. Change here if you later want it configurable.
+  ballZone: { xFrac: 0.0, yFrac: 2 / 3, wFrac: 1 / 3, hFrac: 1 / 3 },
 
   // --- Ball colour target (HSV), picked by tapping the ball -----------------
   ballColor: null,         // { h, s, v } once picked, else null
@@ -127,6 +150,28 @@ function rgb2hsv(r, g, b) {
 function hueDistance(h1, h2) {
   const d = Math.abs(h1 - h2) % 360;
   return d > 180 ? 360 - d : d;
+}
+
+// =============================================================================
+// Ball-zone helpers
+// =============================================================================
+
+/**
+ * Return the ball zone in processing-pixel coordinates for the current frame.
+ * x0,y0 inclusive; x1,y1 exclusive.
+ */
+function getBallZonePx() {
+  const { procW, procH, ballZone } = state;
+  const x0 = Math.round(ballZone.xFrac * procW);
+  const y0 = Math.round(ballZone.yFrac * procH);
+  const x1 = Math.round((ballZone.xFrac + ballZone.wFrac) * procW);
+  const y1 = Math.round((ballZone.yFrac + ballZone.hFrac) * procH);
+  return { x0, y0, x1, y1 };
+}
+
+/** True if the processing-pixel (x, y) lies inside the ball zone. */
+function inBallZone(x, y, zone) {
+  return x >= zone.x0 && x < zone.x1 && y >= zone.y0 && y < zone.y1;
 }
 
 // =============================================================================
@@ -257,7 +302,7 @@ async function startCamera() {
   }
 
   state.running = true;
-  setStatus('Bereit. Ball antippen, um die Farbe zu wählen.');
+  setStatus('Bereit. Ball in die Zone unten links legen und antippen.');
   requestAnimationFrame(loop);
 }
 
@@ -303,36 +348,42 @@ function loop() {
 
 /**
  * Pull the current frame, build the two masks, find both blobs and compute area.
+ *
+ * NOTE: With the rear camera we draw the frame UNMIRRORED (natural orientation).
+ * The front camera is still supported via the "flip" button; when active, the
+ * frame would appear naturally mirrored on screen. For simplicity and because
+ * area is invariant under mirroring, processing and display use the same
+ * (unmirrored) frame here. Tap-to-pick works consistently either way.
  */
 function processFrame() {
   const { procW, procH, procCtx, video } = state;
 
-  // Draw the frame MIRRORED into the processing canvas. Mirroring is purely for
-  // a natural "mirror" feel; area is invariant under mirroring, so it does not
-  // affect the measurement. Processing and display use the SAME mirrored frame,
-  // which keeps tap-to-pick coordinates consistent.
-  procCtx.save();
-  procCtx.translate(procW, 0);
-  procCtx.scale(-1, 1);
+  // Draw the frame UNMIRRORED into the processing canvas (rear-cam use case).
   procCtx.drawImage(video, 0, 0, procW, procH);
-  procCtx.restore();
 
   const img = procCtx.getImageData(0, 0, procW, procH);
   const data = img.data;
 
   const { personMask, ballMask, ballColor, darkThreshold } = state;
   const floorY = Math.round(procH * state.floorPct / 100);
+  const zone = getBallZonePx();
 
   // ---- Build per-pixel masks in a single pass ----------------------------
+  // Zone separation:
+  //   - Inside the ball zone: ONLY ball-colour pixels count (toward ball mask);
+  //     person pixels inside the zone are ignored (set to 0).
+  //   - Outside the ball zone: ONLY dark pixels count (toward person mask);
+  //     ball mask is 0 outside the zone.
   for (let y = 0; y < procH; y++) {
     for (let x = 0; x < procW; x++) {
       const p = y * procW + x;
       const o = p * 4;
       const r = data[o], g = data[o + 1], b = data[o + 2];
+      const insideZone = inBallZone(x, y, zone);
 
-      // Ball mask: only meaningful once a colour has been picked.
+      // Ball mask: only meaningful once a colour has been picked AND inside zone.
       let isBall = 0;
-      if (ballColor) {
+      if (ballColor && insideZone) {
         const { h, s, v } = rgb2hsv(r, g, b);
         if (
           s >= state.satMin &&
@@ -344,11 +395,11 @@ function processFrame() {
       }
       ballMask[p] = isBall;
 
-      // Person mask: dark pixel, above the floor line, and NOT a ball pixel.
-      // Excluding ball pixels prevents the reference from leaking into the
-      // silhouette if their regions ever touch.
+      // Person mask: dark pixel, above the floor line, OUTSIDE the ball zone.
+      // The zone-exclusion guarantees ball and person stay separated regardless
+      // of colour: inside the zone, person pixels never contribute.
       const dark = luminance(r, g, b) < darkThreshold ? 1 : 0;
-      personMask[p] = (dark && !isBall && y < floorY) ? 1 : 0;
+      personMask[p] = (dark && !insideZone && y < floorY) ? 1 : 0;
     }
   }
 
@@ -360,6 +411,7 @@ function processFrame() {
 
   state._person = person;   // stash for the renderer
   state._ball = ball;
+  state._zone = zone;
 
   // ---- Area computation --------------------------------------------------
   // We need both a skier blob and a ball blob to have a metric scale.
@@ -393,7 +445,7 @@ function processFrame() {
 }
 
 // =============================================================================
-// Rendering: mirrored video + overlays + big readout
+// Rendering: video + overlays + big readout
 // =============================================================================
 
 function render() {
@@ -401,17 +453,39 @@ function render() {
   const vw = viewCanvas.width;
   const vh = viewCanvas.height;
 
-  // Background: the mirrored live frame.
-  viewCtx.save();
-  viewCtx.translate(vw, 0);
-  viewCtx.scale(-1, 1);
+  // Background: the live frame (unmirrored, rear-cam natural orientation).
   viewCtx.drawImage(video, 0, 0, vw, vh);
-  viewCtx.restore();
 
-  // Scale factors from processing space to view space (no flip needed: both
-  // are mirrored identically).
+  // Scale factors from processing space to view space.
   const sx = vw / procW;
   const sy = vh / procH;
+
+  // --- Ball zone rectangle (always visible, so the user knows where
+  //     to place the ball) ------------------------------------------------
+  if (state._zone) {
+    const z = state._zone;
+    const zx = z.x0 * sx;
+    const zy = z.y0 * sy;
+    const zw = (z.x1 - z.x0) * sx;
+    const zh = (z.y1 - z.y0) * sy;
+
+    // Soft fill so the zone reads as a reserved area, not a cutout.
+    viewCtx.fillStyle = 'rgba(56, 189, 248, 0.10)';   // light cyan tint
+    viewCtx.fillRect(zx, zy, zw, zh);
+
+    // Fine dashed border; cyan if no ball yet, amber once calibrated.
+    viewCtx.strokeStyle = state.ballColor ? '#f59e0b' : 'rgba(56, 189, 248, 0.9)';
+    viewCtx.lineWidth = 2;
+    viewCtx.setLineDash([6, 5]);
+    viewCtx.strokeRect(zx + 1, zy + 1, zw - 2, zh - 2);
+    viewCtx.setLineDash([]);
+
+    // Small label at the top of the zone.
+    viewCtx.font = '12px system-ui, -apple-system, sans-serif';
+    viewCtx.fillStyle = 'rgba(230, 240, 255, 0.9)';
+    viewCtx.textBaseline = 'top';
+    viewCtx.fillText('BALL HIER', zx + 6, zy + 4);
+  }
 
   // --- Tint the detected skier silhouette --------------------------------
   if (state._person) {
@@ -505,7 +579,7 @@ function updateReadout() {
     areaEl.textContent = '–';
     areaEl.style.color = '#e5e7eb';
     unitEl.style.opacity = '0.4';
-    devEl.textContent = state.ballColor ? 'Suche Ball & Fahrer …' : 'Ball antippen zum Kalibrieren';
+    devEl.textContent = state.ballColor ? 'Suche Ball & Fahrer …' : 'Ball in der Zone antippen';
     bestEl.textContent = '–';
     return;
   }
@@ -581,6 +655,15 @@ function onCanvasTap(e) {
   const px = Math.round(xCanvas * state.procW / state.viewCanvas.width);
   const py = Math.round(yCanvas * state.procH / state.viewCanvas.height);
 
+  // Reject taps outside the ball zone: force the user to tap on the ball
+  // where it belongs, which also prevents accidental colour picks on dark
+  // parts of the skier or the background.
+  const zone = getBallZonePx();
+  if (!inBallZone(px, py, zone)) {
+    setStatus('Bitte in der markierten Zone unten links auf den Ball tippen.');
+    return;
+  }
+
   // Sample a small 3x3 neighbourhood and average for a stable colour pick.
   const img = state.procCtx.getImageData(
     Math.max(0, px - 1), Math.max(0, py - 1), 3, 3
@@ -634,7 +717,7 @@ function bindUI() {
     state.ballColor = null;
     state.areaSmoothed = null;
     state.bestArea = null;
-    setStatus('Ball antippen, um die Farbe neu zu wählen.');
+    setStatus('Ball in der Zone antippen, um die Farbe neu zu wählen.');
   });
 
   // Switch front / rear camera.
@@ -700,23 +783,17 @@ function bindUI() {
   });
 
   // Drag-to-close (und Tap-to-close) auf dem Grip-Balken oben am Panel.
-  // - Eine reine Berührung ohne Bewegung schliesst das Panel sofort.
-  // - Ein Ziehen nach unten verschiebt das Panel live mit dem Finger; wird
-  //   mehr als ~25 % der Panel-Höhe gezogen, klappt es zu, sonst federt es
-  //   in die offene Position zurück.
   const grip = panel.querySelector('.panel-grip');
   if (grip) {
-    let startY = null;     // y-Koordinate des Berührungsbeginns
-    let lastY = null;      // letzte y-Koordinate (für Distanz-Berechnung)
-    let dragged = false;   // wurde signifikant gezogen?
+    let startY = null;
+    let lastY = null;
+    let dragged = false;
 
     const onStart = (e) => {
       const y = e.touches ? e.touches[0].clientY : e.clientY;
       startY = y;
       lastY = y;
       dragged = false;
-      // Während des Drags die CSS-Transition pausieren, damit das Panel dem
-      // Finger ohne Verzögerung folgt.
       panel.style.transition = 'none';
     };
 
@@ -726,10 +803,9 @@ function bindUI() {
       lastY = y;
       const delta = y - startY;
       if (Math.abs(delta) > 5) dragged = true;
-      // Nur nach unten ziehen (nicht nach oben über die Offen-Position hinaus).
       if (delta > 0) {
         panel.style.transform = `translateY(${delta}px)`;
-        if (e.cancelable) e.preventDefault();   // verhindert Hintergrund-Scroll
+        if (e.cancelable) e.preventDefault();
       }
     };
 
@@ -737,11 +813,8 @@ function bindUI() {
       if (startY === null) return;
       const delta = (lastY ?? startY) - startY;
       const panelHeight = panel.getBoundingClientRect().height;
-      // CSS-Transition wieder aktivieren und Inline-Transform zurücknehmen,
-      // damit das Panel sauber in End- oder Ausgangsposition animiert.
       panel.style.transition = '';
       panel.style.transform = '';
-      // Tap (kein Drag) oder Drag über 25 % der Panel-Höhe => schliessen.
       if (!dragged || delta > panelHeight * 0.25) {
         panel.classList.remove('open');
       }
@@ -750,21 +823,16 @@ function bindUI() {
       dragged = false;
     };
 
-    // Touch (Mobile) – primärer Anwendungsfall.
     grip.addEventListener('touchstart', onStart, { passive: false });
     grip.addEventListener('touchmove',  onMove,  { passive: false });
     grip.addEventListener('touchend',   onEnd);
     grip.addEventListener('touchcancel', onEnd);
-    // Maus (Desktop-Tests) – mousemove/up bewusst am document, damit ein Drag
-    // ausserhalb des Grips zu Ende geführt werden kann.
     grip.addEventListener('mousedown', onStart);
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup',   onEnd);
   }
 
-  // Fullscreen toggle. Document-level so the entire viewport is captured.
-  // iOS Safari ignores requestFullscreen on regular pages, but accepts it when
-  // the PWA is launched from the home screen (standalone mode).
+  // Fullscreen toggle.
   const fsBtn = document.getElementById('btn-fullscreen');
   if (fsBtn) {
     fsBtn.addEventListener('click', () => {
@@ -776,7 +844,6 @@ function bindUI() {
         document.exitFullscreen().catch(() => {});
       }
     });
-    // Keep the icon in sync with the actual state.
     document.addEventListener('fullscreenchange', () => {
       fsBtn.textContent = document.fullscreenElement ? '✕' : '⛶';
     });
@@ -791,15 +858,13 @@ function bindUI() {
 // =============================================================================
 
 function init() {
-  // Show the splash image for 2 s, then fade it out and remove it from the
-  // layout so it can't accidentally block taps on the start overlay.
+  // Show the splash image for 2 s, then fade it out.
   const splash = document.getElementById('splash');
   if (splash) {
     setTimeout(() => {
       splash.classList.add('hidden');
-      // Remove from DOM after the CSS fade transition (0.4 s) completes.
       splash.addEventListener('transitionend', () => splash.remove(), { once: true });
-    }, 4000);
+    }, 2000);
   }
 
   state.video      = document.getElementById('video');
@@ -823,27 +888,20 @@ function init() {
 }
 
 // Wake Lock und Kamera automatisch wiederherstellen, wenn die App aus dem
-// Hintergrund zurückkommt. Beim Wechsel in den Hintergrund gibt der Browser
-// den Wake Lock frei, und je nach Plattform stoppt auch der Kamera-Stream.
-// Sobald die App wieder sichtbar ist, holen wir beides zurück – ohne dass der
-// Nutzer erneut auf "Kamera starten" tippen muss.
+// Hintergrund zurückkommt.
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible') return;
 
-  // Kamera-Stream neu aufbauen, falls er beim Tab-Wechsel oder Display-Aus
-  // beendet wurde. state.running wird beim ersten erfolgreichen Start gesetzt
-  // und bleibt true – das nutzen wir als Marker "Kamera war schon einmal aktiv".
   if (state.running) {
     const track = state.stream && state.stream.getVideoTracks()[0];
     const trackDead = !track || track.readyState === 'ended';
     const videoStalled = state.video && state.video.paused;
     if (trackDead || videoStalled) {
-      await startCamera();           // baut Stream + Wake Lock komplett neu auf
-      return;                        // Wake Lock unten nicht doppelt anfordern
+      await startCamera();
+      return;
     }
   }
 
-  // Wake Lock allein wiederherstellen (Stream lebt noch).
   if (state.wakeLock !== null && 'wakeLock' in navigator) {
     try {
       state.wakeLock = await navigator.wakeLock.request('screen');
@@ -854,3 +912,4 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 document.addEventListener('DOMContentLoaded', init);
+
