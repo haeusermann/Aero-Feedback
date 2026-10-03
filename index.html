@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="de-CH">
 <head>
@@ -27,13 +29,14 @@
       <h1>Frontfläche</h1>
       <p class="lead">Live-Stirnfläche für die Hocke im Skirennsport.</p>
       <ol class="steps">
-        <li>Fahrer mittig ins Bild, heller Hintergrund (Schnee).</li>
-        <li>Ball (bekannter Durchmesser) auf Fusshöhe daneben legen.</li>
-        <li>Ball einmal antippen – das setzt den Massstab.</li>
+        <li>Rückkamera auf den Fahrer richten, heller Hintergrund (Schnee oder helle Wand).</li>
+        <li>Ball (bekannter Durchmesser) in die markierte Zone unten links legen.</li>
+        <li>Fahrer stellt sich rechts daneben ins Bild.</li>
+        <li>Ball in der Zone einmal antippen – das setzt den Massstab.</li>
         <li>Hocke variieren und die Fläche beobachten.</li>
       </ol>
       <button id="btn-start" class="primary">Kamera starten</button>
-      <p class="hint">Frontkamera, damit der Fahrer die Anzeige selbst sieht.</p>
+      <p class="hint">Rückkamera: eine Person hält das Handy, der Fahrer bekommt per Ton Feedback.</p>
     </div>
   </div>
 
@@ -43,7 +46,7 @@
     <video id="video" playsinline muted></video>
     <canvas id="proc" hidden></canvas>
 
-    <!-- Visible canvas: mirrored video + overlays. Tap it to pick the ball. -->
+    <!-- Visible canvas: video + overlays. Tap it to pick the ball. -->
     <canvas id="view"></canvas>
 
     <!-- Big, glanceable readout overlaid on the video -->
@@ -52,7 +55,7 @@
         <span id="area-value">–</span>
         <span id="area-unit">m²</span>
       </div>
-      <div id="deviation" class="sub">Ball antippen zum Kalibrieren</div>
+      <div id="deviation" class="sub">Ball in der Zone antippen zum Kalibrieren</div>
       <div class="best-row">Bestwert: <span id="best-value">–</span></div>
     </div>
 
@@ -147,3 +150,4 @@
   <script src="app.js"></script>
 </body>
 </html>
+
