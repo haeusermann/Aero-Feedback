@@ -1,3 +1,5 @@
+
+
 /* =============================================================================
  * Frontfläche - styles
  * Design intent: a field instrument. Dark, cold "alpine dusk" stage so the
@@ -35,8 +37,8 @@ html, body {
 #splash {
   position: fixed;
   inset: 0;
-  z-index: 100;                  /* above everything, incl. start overlay */
-  background: #fff;              /* weisser Hintergrund passend zum Bild */
+  z-index: 100;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,7 +48,7 @@ html, body {
   max-width: min(380px, 90vw);
   max-height: 90vh;
   object-fit: contain;
-  border-radius: 28px;           /* spiegelt die abgerundeten Ecken des Bildes */
+  border-radius: 28px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.18);
 }
 #splash.hidden {
@@ -131,7 +133,7 @@ button.primary:active { transform: translateY(1px); }
   left: 0;
   right: 0;
   text-align: center;
-  pointer-events: none;          /* taps pass through to the canvas */
+  pointer-events: none;
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.75);
 }
 .readout {
@@ -141,7 +143,6 @@ button.primary:active { transform: translateY(1px); }
   gap: 8px;
 }
 #area-value {
-  /* Tabular figures keep the number from jittering sideways as it changes. */
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
   font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, monospace;
@@ -201,7 +202,6 @@ button.primary:active { transform: translateY(1px); }
   background: linear-gradient(to top, rgba(8, 12, 22, 0.92), rgba(8, 12, 22, 0));
 }
 
-/* Left cluster: two small stacked secondary buttons */
 .actions-secondary {
   display: flex;
   flex-direction: column;
@@ -225,7 +225,6 @@ button.primary:active { transform: translateY(1px); }
 }
 .action-small:active { opacity: 0.75; }
 
-/* Centre: prominent ball-pick button */
 .action-main {
   flex: 1;
   padding: 15px 10px;
@@ -240,7 +239,6 @@ button.primary:active { transform: translateY(1px); }
 }
 .action-main:active { transform: translateY(1px); }
 
-/* Right: icon-only settings button */
 .action-icon {
   flex-shrink: 0;
   width: 48px;
@@ -281,13 +279,11 @@ button.primary:active { transform: translateY(1px); }
   border-radius: 3px;
   background: var(--line);
   margin: 6px auto 14px;
-  /* Grip is interactive: tap or drag down to close the panel. */
   position: relative;
   cursor: grab;
-  touch-action: none;            /* let JS handle the gesture, no native scroll */
+  touch-action: none;
 }
 .panel-grip:active { cursor: grabbing; }
-/* Invisible hit area around the visual grip so it's easy to grab on touch. */
 .panel-grip::before {
   content: '';
   position: absolute;
@@ -332,7 +328,6 @@ input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent);
   color: var(--ink-dim);
 }
 
-/* Respect reduced-motion preferences. */
 @media (prefers-reduced-motion: reduce) {
   #panel { transition: none; }
 }
@@ -418,3 +413,4 @@ input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent);
   line-height: 1.5;
   color: var(--ink-dim);
 }
+
